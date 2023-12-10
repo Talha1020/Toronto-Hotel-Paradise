@@ -1,11 +1,12 @@
 import supabase from "./supabase";
 
-export default async function getCabins() {
+export async function getCabins() {
   // eslint-disable-next-line no-unused-vars
   const { data, error } = await supabase.from("cabins").select("*");
 
-  if (error) {
-    throw new Error("this is not right cabins");
-  }
   return data;
+}
+
+export async function deleteCabins(id) {
+  const { error } = await supabase.from("cabins").delete().eq("id", id);
 }
