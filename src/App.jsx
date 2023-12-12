@@ -15,7 +15,7 @@ import PageNotFound from "./pages/PageNotFound";
 import Applayout from "./ui/Applayout";
 import { Toaster } from "react-hot-toast";
 
-export const queryClient = new QueryClient({
+const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 0,
