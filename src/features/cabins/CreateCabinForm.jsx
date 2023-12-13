@@ -1,4 +1,4 @@
-import { UpdateCabins, insertCabins } from "../../services/apiCabins";
+import { EditCabins } from "../../services/apiCabins";
 import FormRow from "../../pages/FormRow";
 import Input from "../../ui/Input";
 import Form from "../../ui/Form";
@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 function CreateCabinForm({ CabinToEdit = {} }) {
   const { id: editId, ...editCabin } = CabinToEdit;
   const isEditCabin = Boolean(editId);
-  console.log(editCabin);
+
   const {
     register,
     handleSubmit,
@@ -23,26 +23,61 @@ function CreateCabinForm({ CabinToEdit = {} }) {
   } = useForm({
     defaultValues: editCabin,
   });
-  console.log(errors);
+
   const queryClient = useQueryClient();
   const {
-    mutate,
-    isLoading: isSubmitting,
-    error,
+    mutate: insertCabin,
+    isLoading: isInserting,
+    error: insertError,
   } = useMutation({
-    mutationFn: ({ Cabinsdata, id }) => insertCabins(Cabinsdata, id),
+    mutationFn: ({ data, id }) => EditCabins(data, id),
     onSuccess: () => {
-      toast.success("New cabin successfully added");
+      toast.success("New cabin has been successfully added");
       queryClient.invalidateQueries(["cabinData"]);
       reset();
     },
-    onError: () => toast.error(error.message),
+    onError: () => toast.error(insertError.message),
   });
 
+  const {
+    mutate: updateCabin,
+    isLoading: isUpdating,
+    error: updateError,
+  } = useMutation({
+    mutationFn: ({ data, id }) => EditCabins(data, id),
+    ////// onSuccess has access to the data returned from the funciton
+    onSuccess: () => {
+      toast.success("Cabin has been successfully updated");
+      queryClient.invalidateQueries(["cabinData"]);
+      reset();
+    },
+    onError: () => toast.error(updateError.message),
+  });
+
+  const isWorking = isUpdating || isInserting;
   return (
     <Form
       onSubmit={handleSubmit((Cabinsdata) => {
-        mutate({ ...Cabinsdata, image: Cabinsdata.image[0] });
+        const image =
+          typeof Cabinsdata.image === "string"
+            ? Cabinsdata.image
+            : Cabinsdata.image[0];
+        if (isEditCabin)
+          updateCabin({
+            data: {
+              ...Cabinsdata,
+              image,
+            },
+            id: editId,
+          });
+        else
+          insertCabin({
+            data: {
+              ...Cabinsdata,
+              image,
+            },
+            id: editId,
+          });
       })}
     >
       <FormRow
@@ -54,7 +89,7 @@ function CreateCabinForm({ CabinToEdit = {} }) {
           {...register("name", { required: "This field cannot be empty !" })}
           type="text"
           id="name"
-          disabled={isSubmitting}
+          disabled={isWorking}
         />
       </FormRow>
       <FormRow
@@ -70,7 +105,7 @@ function CreateCabinForm({ CabinToEdit = {} }) {
           type="number"
           id="maxCapacity"
           min={0}
-          disabled={isSubmitting}
+          disabled={isWorking}
         />
       </FormRow>
       <FormRow
@@ -85,7 +120,7 @@ function CreateCabinForm({ CabinToEdit = {} }) {
           })}
           type="number"
           id="regularPrice"
-          disabled={isSubmitting}
+          disabled={isWorking}
         />
       </FormRow>
       <FormRow
@@ -104,7 +139,7 @@ function CreateCabinForm({ CabinToEdit = {} }) {
           })}
           type="number"
           defaultValue={0}
-          disabled={isSubmitting}
+          disabled={isWorking}
         />
       </FormRow>
       <FormRow
@@ -113,7 +148,7 @@ function CreateCabinForm({ CabinToEdit = {} }) {
         FormErrors={errors?.description?.message}
       >
         <Textarea
-          disabled={isSubmitting}
+          disabled={isWorking}
           id="description"
           {...register(
             "description",
@@ -147,7 +182,7 @@ function CreateCabinForm({ CabinToEdit = {} }) {
         <Button onClick={() => reset()} variation="secondary" type="reset">
           Cancel
         </Button>
-        <Button variation="primary" size="medium" disabled={isSubmitting}>
+        <Button variation="primary" size="medium" disabled={isWorking}>
           {isEditCabin ? " Edit cabin" : "Insert new cabin"}
         </Button>
       </FormRow>
