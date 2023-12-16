@@ -1,16 +1,15 @@
-/* eslint-disable react/prop-types */
-import styled from "styled-components";
-import { formatCurrency } from "../../utils/helpers";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { HiSquare2Stack, HiPencil, HiTrash } from 'react-icons/hi2';
 
-import toast from "react-hot-toast";
-import { deleteCabins } from "../../services/apiCabins";
-import Button from "../../ui/Button";
-import Row from "../../ui/Row";
-import ButtonText from "../../ui/ButtonText";
-import ButtonGroup from "../../ui/ButtonGroup";
-import { useState } from "react";
-import CreateCabinForm from "./CreateCabinForm";
+import styled from 'styled-components';
+import { formatCurrency } from '../../utils/helpers';
+import Row from '../../ui/Row';
+import ButtonGroup from '../../ui/ButtonGroup';
+import { useState } from 'react';
+import CreateCabinForm from './CreateCabinForm';
+import ButtonIcon from '../../ui/ButtonIcon';
+import useDeleteCabin from './useDeleteCabin';
+
+import useInsertCabin from './useInsertCabin';
 
 const TableRow = styled.div`
   display: grid;
@@ -56,42 +55,34 @@ const ButtonContainer = styled.div`
   display: flex;
 `;
 function CabinRow({ cabin }) {
+  const { image, name, discount, regularPrice, maxCapacity, id, description } = cabin;
   const [showForm, setShowForm] = useState(false);
-
-  const queryClient = useQueryClient();
-  const { mutate } = useMutation({
-    mutationFn: deleteCabins,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cabinData"] });
-      toast.success("Cabin successfully deleted");
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+  const { deletePresentCabin } = useDeleteCabin();
+  const { insertCabin, isInserting } = useInsertCabin();
+  const [DupName, setName] = useState(1);
   return (
     <Row>
       <TableRow>
-        <Img src={cabin.image}></Img>
-        <Cabin>{cabin.name}</Cabin>
-        <div>Fits up to {cabin.maxCapacity} guests</div>
-        <Price>{formatCurrency(cabin.regularPrice)}</Price>
-        <Discount> {formatCurrency(cabin.discount)}</Discount>
+        <Img src={image}></Img>
+        <Cabin>{name}</Cabin>
+        <div>Fits up to {maxCapacity} guests</div>
+        <Price>{formatCurrency(regularPrice)}</Price>
+        <Discount> {discount ? formatCurrency(discount) : '---'}</Discount>
         <ButtonGroup>
-          <Button
-            size="small"
-            variation="secondary"
-            onClick={() => mutate(cabin.id)}
+          <ButtonIcon
+            onClick={() => {
+              setName((prev) => prev + 1);
+              insertCabin({ image, name: `${name}-${DupName}`, discount, regularPrice, maxCapacity, description });
+            }}
           >
-            Delete
-          </Button>
-          <Button
-            size="small"
-            variation="primary"
-            onClick={() => setShowForm((showForm) => !showForm)}
-          >
-            Update
-          </Button>
+            <HiSquare2Stack />
+          </ButtonIcon>
+          <ButtonIcon onClick={() => setShowForm((showForm) => !showForm)}>
+            <HiPencil />
+          </ButtonIcon>
+          <ButtonIcon onClick={() => deletePresentCabin(id)}>
+            <HiTrash />
+          </ButtonIcon>
         </ButtonGroup>
       </TableRow>
       {showForm && <CreateCabinForm CabinToEdit={cabin} />}
