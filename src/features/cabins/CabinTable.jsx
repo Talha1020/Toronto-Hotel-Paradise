@@ -1,9 +1,10 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
-import { useQuery } from "@tanstack/react-query";
-import Spinner from "../../ui/Spinner";
-import CabinRow from "./CabinRow";
-import { getCabins } from "../../services/apiCabins";
+import { useQuery } from '@tanstack/react-query';
+import Spinner from '../../ui/Spinner';
+import CabinRow from './CabinRow';
+import { getCabins } from '../../services/apiCabins';
+import useFetchCabin from './useFetchCabin';
 
 const Table = styled.div`
   border: 1px solid var(--color-grey-200);
@@ -30,21 +31,14 @@ const TableHeader = styled.header`
   padding: 1.6rem 2.8rem;
 `;
 function CabinTable() {
-  const {
-    isLoading,
-    error,
-    data: Cabin,
-  } = useQuery({
-    queryKey: ["cabinData"],
-    queryFn: getCabins,
-  });
+  const { isLoading, error, Cabin } = useFetchCabin();
 
   if (isLoading) return <Spinner />;
 
-  if (error) return "An error has occurred: " + error.message;
+  if (error) return 'An error has occurred: ' + error.message;
   return (
-    <Table role="table">
-      <TableHeader role="row">
+    <Table role='table'>
+      <TableHeader role='row'>
         <div></div>
         <div>Cabin</div>
         <div>Capacity</div>
