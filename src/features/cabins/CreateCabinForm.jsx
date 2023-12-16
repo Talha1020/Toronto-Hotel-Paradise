@@ -1,17 +1,18 @@
-import { EditCabins } from "../../services/apiCabins";
-import FormRow from "../../pages/FormRow";
-import Input from "../../ui/Input";
-import Form from "../../ui/Form";
-import Button from "../../ui/Button";
-import FileInput from "../../ui/FileInput";
-import Textarea from "../../ui/Textarea";
-import { useForm } from "react-hook-form";
-import { min } from "date-fns";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import FormRow from '../../pages/FormRow';
+import Input from '../../ui/Input';
+import Form from '../../ui/Form';
+import Button from '../../ui/Button';
+import FileInput from '../../ui/FileInput';
+import Textarea from '../../ui/Textarea';
+import { useForm } from 'react-hook-form';
+import { min } from 'date-fns';
+import useUpdateCabin from './useUpdateCabin';
+import useInsertCabin from './useInsertCabin';
 
+
+//// adding ={} ensures that when there is no data then the properties of {} will not stop the function rather than reading undefined CabinToEdit if its not there.
 function CreateCabinForm({ CabinToEdit = {} }) {
-  const { id: editId, ...editCabin } = CabinToEdit;
+  const { id: editId, ...editCabinDataRecieved } = CabinToEdit;
   const isEditCabin = Boolean(editId);
 
   const {
@@ -21,138 +22,81 @@ function CreateCabinForm({ CabinToEdit = {} }) {
     getValues,
     formState: { errors },
   } = useForm({
-    defaultValues: editCabin,
+    defaultValues: editCabinDataRecieved,
   });
 
-  const queryClient = useQueryClient();
-  const {
-    mutate: insertCabin,
-    isLoading: isInserting,
-    error: insertError,
-  } = useMutation({
-    mutationFn: ({ data, id }) => EditCabins(data, id),
-    onSuccess: () => {
-      toast.success("New cabin has been successfully added");
-      queryClient.invalidateQueries(["cabinData"]);
-      reset();
-    },
-    onError: () => toast.error(insertError.message),
-  });
-
-  const {
-    mutate: updateCabin,
-    isLoading: isUpdating,
-    error: updateError,
-  } = useMutation({
-    mutationFn: ({ data, id }) => EditCabins(data, id),
-    ////// onSuccess has access to the data returned from the funciton
-    onSuccess: () => {
-      toast.success("Cabin has been successfully updated");
-      queryClient.invalidateQueries(["cabinData"]);
-      reset();
-    },
-    onError: () => toast.error(updateError.message),
-  });
-
+  const { updateCabin, isUpdating } = useUpdateCabin();
+  const { insertCabin, isInserting } = useInsertCabin();
   const isWorking = isUpdating || isInserting;
+
   return (
     <Form
       onSubmit={handleSubmit((Cabinsdata) => {
-        const image =
-          typeof Cabinsdata.image === "string"
-            ? Cabinsdata.image
-            : Cabinsdata.image[0];
+        const image = typeof Cabinsdata.image === 'string' ? Cabinsdata.image : Cabinsdata.image[0];
         if (isEditCabin)
-          updateCabin({
-            data: {
-              ...Cabinsdata,
-              image,
-            },
-            id: editId,
-          });
+          updateCabin(
+            { data: { ...Cabinsdata, image }, id: editId },
+            {
+              onSuccess: reset(),
+            }
+          );
         else
-          insertCabin({
-            data: {
-              ...Cabinsdata,
-              image,
-            },
-            id: editId,
-          });
+          insertCabin(
+            { ...Cabinsdata, image },
+            {
+              onSuccess: reset(),
+            }
+          );
       })}
     >
-      <FormRow
-        htmlFor="name"
-        label="Cabin name"
-        FormErrors={errors?.name?.message}
-      >
-        <Input
-          {...register("name", { required: "This field cannot be empty !" })}
-          type="text"
-          id="name"
-          disabled={isWorking}
-        />
+      <FormRow htmlFor='name' label='Cabin name' FormErrors={errors?.name?.message}>
+        <Input {...register('name', { required: 'This field cannot be empty !' })} type='text' id='name' disabled={isWorking} />
       </FormRow>
-      <FormRow
-        htmlFor="maxCapacity"
-        label="Maximum capacity"
-        FormErrors={errors?.maxCapacity?.message}
-      >
+      <FormRow htmlFor='maxCapacity' label='Maximum capacity' FormErrors={errors?.maxCapacity?.message}>
         <Input
-          {...register("maxCapacity", {
-            required: "This field cannot be empty !",
-            min: { value: 1, message: "maximum capacity cannot be 0 !" },
+          {...register('maxCapacity', {
+            required: 'This field cannot be empty !',
+            min: { value: 1, message: 'maximum capacity cannot be 0 !' },
           })}
-          type="number"
-          id="maxCapacity"
+          type='number'
+          id='maxCapacity'
           min={0}
           disabled={isWorking}
         />
       </FormRow>
-      <FormRow
-        htmlFor="regularPrice"
-        label="Regular price"
-        FormErrors={errors?.regularPrice?.message}
-      >
+      <FormRow htmlFor='regularPrice' label='Regular price' FormErrors={errors?.regularPrice?.message}>
         <Input
-          {...register("regularPrice", {
-            required: "This field cannot be empty !",
-            min: { value: 0, message: "Please enter a value more than 0 !" },
+          {...register('regularPrice', {
+            required: 'This field cannot be empty !',
+            min: { value: 0, message: 'Please enter a value more than 0 !' },
           })}
-          type="number"
-          id="regularPrice"
+          type='number'
+          id='regularPrice'
           disabled={isWorking}
         />
       </FormRow>
-      <FormRow
-        htmlFor="discount"
-        label="Discount"
-        FormErrors={errors?.discount?.message}
-      >
+      <FormRow htmlFor='discount' label='Discount' FormErrors={errors?.discount?.message}>
         <Input
-          id="discount"
-          {...register("discount", {
+          id='discount'
+          {...register('discount', {
             required: true,
             max: {
-              value: getValues("regularPrice"),
-              message: "Discount cannot be bigger than regular price !",
+              value: getValues('regularPrice'),
+              message: 'Discount cannot be bigger than regular price !',
             },
           })}
-          type="number"
+          type='number'
           defaultValue={0}
           disabled={isWorking}
         />
       </FormRow>
-      <FormRow
-        htmlFor="description"
-        label="Description for website"
-        FormErrors={errors?.description?.message}
-      >
+      <FormRow htmlFor='description' label='Description for website' FormErrors={errors?.description?.message}>
         <Textarea
           disabled={isWorking}
-          id="description"
+          id='description'
           {...register(
-            "description",
-            { required: "This Field cannot be empty !" },
+            'description',
+            { required: 'This Field cannot be empty !' },
             {
               maxlength: {
                 value: 100,
@@ -160,30 +104,26 @@ function CreateCabinForm({ CabinToEdit = {} }) {
               },
             }
           )}
-          type="number"
-          defaultValue=""
+          type='number'
+          defaultValue=''
         />
       </FormRow>
-      <FormRow
-        htmlFor="image"
-        label="Cabin photo"
-        FormErrors={errors?.image?.message}
-      >
+      <FormRow htmlFor='image' label='Cabin photo' FormErrors={errors?.image?.message}>
         <FileInput
-          {...register("image", {
-            required: isEditCabin ? false : "This field is required",
+          {...register('image', {
+            required: isEditCabin ? false : 'This field is required',
           })}
-          id="image"
-          accept="image/*"
+          id='image'
+          accept='image/*'
         />
       </FormRow>
       <FormRow>
         {/* type is an HTML attribute! */}
-        <Button onClick={() => reset()} variation="secondary" type="reset">
+        <Button onClick={() => reset()} variation='secondary' type='reset'>
           Cancel
         </Button>
-        <Button variation="primary" size="medium" disabled={isWorking}>
-          {isEditCabin ? " Edit cabin" : "Insert new cabin"}
+        <Button variation='primary' size='medium' disabled={isWorking}>
+          {isEditCabin ? ' Edit cabin' : 'Insert new cabin'}
         </Button>
       </FormRow>
     </Form>
