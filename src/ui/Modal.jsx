@@ -1,4 +1,7 @@
-import styled from "styled-components";
+import { cloneElement, createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { HiXMark } from 'react-icons/hi2';
+import styled from 'styled-components';
 
 const StyledModal = styled.div`
   position: fixed;
@@ -10,9 +13,11 @@ const StyledModal = styled.div`
   box-shadow: var(--shadow-lg);
   padding: 3.2rem 4rem;
   transition: all 0.5s;
+
 `;
 
 const Overlay = styled.div`
+ 
   position: fixed;
   top: 0;
   left: 0;
@@ -22,6 +27,7 @@ const Overlay = styled.div`
   backdrop-filter: blur(4px);
   z-index: 1000;
   transition: all 0.5s;
+
 `;
 
 const Button = styled.button`
@@ -48,3 +54,48 @@ const Button = styled.button`
     color: var(--color-grey-500);
   }
 `;
+
+const ModalContext = createContext();
+function Modal({ children }) {
+  const [isOpen, setShowForm] = useState('');
+
+  return <ModalContext.Provider value={{ isOpen, setShowForm }}>{children}</ModalContext.Provider>;
+}
+
+function OpenForm({ children, Show }) {
+  const { setShowForm, isOpen } = useContext(ModalContext);
+
+  return cloneElement(children, { onClick: () => setShowForm(Show) });
+}
+
+function ModalWindow({ children, toDisplay }) {
+  const { setShowForm, isOpen } = useContext(ModalContext);
+  const ref = useRef();
+
+  function ClickOutsideWindow(e) {
+    if (ref.current && !ref.current.contains(e.target)) setShowForm('');
+  }
+  useEffect(function () {
+    window.addEventListener('click', ClickOutsideWindow, true);
+    if (isOpen === 'CabinForm') document.body.classList.add('scroll');
+    return () => window.removeEventListener('click', ClickOutsideWindow, true);
+  }, []);
+
+  if (isOpen !== toDisplay) return null;
+  return createPortal(
+    <Overlay>
+      <StyledModal ref={ref}>
+        <Button onClick={() => setShowForm('')}>
+          <HiXMark />
+        </Button>
+        {cloneElement(children, { ModalForm: () => setShowForm('') })}
+      </StyledModal>
+    </Overlay>,
+    document.body
+  );
+}
+
+Modal.OpenForm = OpenForm;
+Modal.ModalWindow = ModalWindow;
+
+export default Modal;
