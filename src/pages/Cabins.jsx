@@ -1,27 +1,24 @@
-/* eslint-disable no-unused-vars */
-import Heading from "../ui/Heading";
-import Row from "../ui/Row";
+import Heading from '../ui/Heading';
+import Row from '../ui/Row';
 
-import { useQuery } from "@tanstack/react-query";
-import CabinTable from "../features/cabins/CabinTable";
-import CreateCabinForm from "../features/cabins/CreateCabinForm";
-import Button from "../ui/Button";
-import { useState } from "react";
+import CabinTable from '../features/cabins/CabinTable';
+
+import AddCabins from '../features/cabins/AddCabins';
+import TableOperations from '../ui/TableOperations';
+import { StyledSortButtons } from '../ui/Filter';
+import { StyledSortSelect } from '../ui/Select';
+import CabinTableOperations from '../ui/CabinTableOperations';
 
 function Cabins() {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const [showForm, setShowForm] = useState(false);
-
   return (
     <>
-      <Row type="horizontal">
-        <Heading as="h1">All cabins</Heading>
-        <p>Filter / Sort</p>
+      <Row type='horizontal'>
+        <Heading as='h1'>All cabins</Heading>
+        <CabinTableOperations />
       </Row>
       <Row>
         <CabinTable />
-        <Button onClick={() => setShowForm(!showForm)}>Add new cabin</Button>
-        {showForm && <CreateCabinForm />}
+        <AddCabins />
       </Row>
     </>
   );
